@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мій Flask проєкт{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slideDown {
+            0% { max-height: 0; opacity: 0; }
+            100% { max-height: 300px; opacity: 1; }
+        }
+        @keyframes slideUp {
+            0% { max-height: 300px; opacity: 1; }
+            100% { max-height: 0; opacity: 0; }
+        }
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out forwards;
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-in forwards;
+        }
+        .burger-line {
+            transition: all 0.3s ease-in-out;
+        }
+        .open .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .open .line2 {
+            opacity: 0;
+        }
+        .open .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-blue-500 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-white text-xl font-bold transition-transform duration-300 hover:scale-110">Мій проєкт</a>
+            <div class="hidden md:flex space-x-4">
+                <a href="/" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Головна</a>
+                <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Магазин</a>
+                <a href="/about" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Про нас</a>
+                <a href="#" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Зворотній зв'язок</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-white w-6 h-6 relative focus:outline-none">
+                <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line1"></span>
+                <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line2"></span>
+                <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line3"></span>
+            </button>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden overflow-hidden">
+            <a href="/" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Головна</a>
+            <a href="#" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Магазин</a>
+            <a href="/about" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Про нас</a>
+            <a href="#" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Зворотній зв'язок</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 p-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenuButton.classList.toggle('open');
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenu.classList.add('animate-slide-down');
+                mobileMenu.classList.remove('animate-slide-up');
+            } else {
+                mobileMenu.classList.add('animate-slide-up');
+                mobileMenu.classList.remove('animate-slide-down');
+                setTimeout(() => {
+                    mobileMenu.classList.add('hidden');
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>
