@@ -14,5 +14,9 @@ def about():
 def guides():
     return render_template('guides.html')
 
+    @app.route('/characters')
+def characters():
+    return render_template('characters.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

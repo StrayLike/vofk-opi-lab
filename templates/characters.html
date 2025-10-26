@@ -1,0 +1,26 @@
+{% extends "base.html" %} 
+{% block title %}Персонажі{% endblock %} 
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-4">Жителі Пелікан-тауну</h1>
+<p class="text-lg mb-4">У місті живе понад 30 унікальних персонажів, 
+з якими ви можете дружити, дарувати подарунки і навіть одружуватися!</p>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow-md text-center">
+        <img src="https://picsum.photos/200/200?random=3" alt="Абігейл" class="w-32 h-32 rounded-full mx-auto mb-2 border-4 border-purple-300">
+        <h3 class="text-xl font-semibold">Абігейл</h3>
+        <p class="text-gray-600">Живе в магазині П'єра. Любить аметист та відеоігри.</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-md text-center">
+        <img src="https://picsum.photos/200/200?random=4" alt="Себастьян" class="w-32 h-32 rounded-full mx-auto mb-2 border-4 border-gray-700">
+        <h3 class="text-xl font-semibold">Себастьян</h3>
+        <p class="text-gray-600">Програміст, що живе у підвалі. Любить "заморожені сльози".</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-md text-center">
+        <img src="https://picsum.photos/200/200?random=5" alt="Лія" class="w-32 h-32 rounded-full mx-auto mb-2 border-4 border-green-300">
+        <h3 class="text-xl font-semibold">Лія</h3>
+        <p class="text-gray-600">Скульпторка, що живе у котеджі біля річки. Любить салати.</p>
+    </div>
+</div>
+{% endblock %}
