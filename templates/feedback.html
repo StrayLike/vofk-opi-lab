@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Відгуки{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-4">Дошка оголошень Пелікан-тауну</h1>
+
+{% if g.user %}
+<div class="bg-white p-6 rounded-lg shadow mb-8 border-l-4 border-blue-500">
+    <h3 class="text-xl font-bold mb-2">Написати на дошці</h3>
+    <form method="post">
+        <textarea name="text" class="w-full border rounded p-3 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ваше повідомлення..." required></textarea>
+        <div class="flex items-center gap-4">
+            <label class="font-bold text-gray-700">Оцінка:</label>
+            <select name="rating" class="border rounded p-2">
+                <option value="5">⭐️⭐️⭐️⭐️⭐️ (Іридієва якість)</option>
+                <option value="4">⭐️⭐️⭐️⭐️ (Золота якість)</option>
+                <option value="3">⭐️⭐️⭐️ (Срібна якість)</option>
+                <option value="2">⭐️⭐️ (Звичайна якість)</option>
+                <option value="1">⭐️ (Сміття)</option>
+            </select>
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Опублікувати</button>
+        </div>
+    </form>
+</div>
+{% else %}
+<div class="bg-yellow-100 text-yellow-800 p-4 rounded mb-6">
+    <a href="{{ url_for('login') }}" class="font-bold underline">Увійдіть</a>, щоб залишити відгук на дошці оголошень.
+</div>
+{% endif %}
+
+<div class="grid gap-4">
+    {% for item in feedbacks %}
+    <div class="bg-amber-50 p-4 rounded border border-amber-200 relative shadow-sm">
+        <div class="flex justify-between items-start">
+            <div>
+                <h4 class="font-bold text-lg text-amber-900">{{ item['username'] }}</h4>
+                <p class="text-xs text-gray-500">{{ item['created_at'] }}</p>
+            </div>
+            <div class="text-yellow-500 text-lg">{{ '⭐️' * item['rating'] }}</div>
+        </div>
+        <p class="mt-2 text-gray-800">{{ item['text'] }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
