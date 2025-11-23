@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Ваш Рюкзак{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-8 flex items-center gap-2">
+    🎒 Ваш рюкзак
+</h1>
+
+{% if cart_items %}
+<div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex-grow bg-white shadow rounded-lg overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-100 border-b">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-gray-600 uppercase">Товар</th>
+                    <th class="px-6 py-4 text-right text-sm font-bold text-gray-600 uppercase">Ціна</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for item in cart_items %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                             <img src="{{ item['image'] }}" class="max-h-full max-w-full">
+                        </div>
+                        <span class="font-medium text-gray-900">{{ item['name'] }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-bold text-gray-700">{{ item['price'] }}g</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="w-full lg:w-80">
+        <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">Рахунок від Льюїса</h2>
+            <div class="flex justify-between mb-2 text-gray-600">
+                <span>Кількість товарів:</span>
+                <span>{{ cart_items|length }}</span>
+            </div>
+            <div class="flex justify-between mb-6 text-2xl font-bold text-gray-900">
+                <span>Разом:</span>
+                <span class="text-green-600">{{ total }}g</span>
+            </div>
+            <form action="{{ url_for('checkout') }}" method="post">
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition transform hover:-translate-y-1">
+                    Оформити замовлення
+                </button>
+            </form>
+            <p class="text-xs text-gray-400 text-center mt-3">Доставка в скриньку завтра зранку.</p>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-16 bg-white rounded-lg shadow">
+    <div class="text-6xl mb-4">🕸</div>
+    <h2 class="text-2xl font-bold text-gray-700 mb-2">Тут порожньо...</h2>
+    <p class="text-gray-500 mb-6">Схоже, ви ще нічого не купили у П'єра.</p>
+    <a href="{{ url_for('shop') }}" class="bg-blue-500 text-white px-8 py-3 rounded-full hover:bg-blue-600 transition shadow-lg">
+        Перейти до магазину
+    </a>
+</div>
+{% endif %}
+{% endblock %}
