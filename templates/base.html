@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Мій Flask проєкт{% endblock %}</title>
+    <title>{% block title %}Stardew Hub{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes slideDown {
             0% { max-height: 0; opacity: 0; }
-            100% { max-height: 300px; opacity: 1; }
+            100% { max-height: 400px; opacity: 1; }
         }
         @keyframes slideUp {
-            0% { max-height: 300px; opacity: 1; }
+            0% { max-height: 400px; opacity: 1; }
             100% { max-height: 0; opacity: 0; }
         }
         .animate-slide-down {
@@ -34,35 +34,92 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-blue-500 p-4">
+<body class="bg-gray-100 flex flex-col min-h-screen">
+    <nav class="bg-blue-500 p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-white text-xl font-bold transition-transform duration-300 hover:scale-110">Stardew _valley_fun</a>
-            <div class="hidden md:flex space-x-4">
-                <a href="/" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Головна</a>
-               <a href="/guides" class="text-white hover:text-blue-200 ...">Гайди</a>
-               <a href="/about" class="text-white hover:text-blue-200 ...">Про нас</a>
-               <a href="/characters" class="text-white hover:text-blue-200 ...">Персонажі</a>
-               <a href="/map" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Мапа</a>
+            <a href="{{ url_for('home') }}" class="text-white text-xl font-bold transition-transform duration-300 hover:scale-105 flex items-center gap-2">
+                🌾 Stardew Valley Fun
+            </a>
+            
+            <div class="hidden md:flex space-x-4 items-center">
+                <a href="{{ url_for('home') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Головна</a>
+                
+                <a href="{{ url_for('shop') }}" class="text-yellow-300 hover:text-yellow-100 font-bold transition-colors duration-300 hover:underline">Магазин</a>
+                
+                <a href="{{ url_for('guides') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Гайди</a>
+                <a href="{{ url_for('about') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Про нас</a>
+                <a href="{{ url_for('characters') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Персонажі</a>
+                <a href="{{ url_for('map') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Мапа</a>
+                <a href="{{ url_for('feedback') }}" class="text-white hover:text-blue-200 transition-colors duration-300 hover:underline">Відгуки</a>
+
+                <div class="border-l border-blue-400 pl-4 ml-2 flex items-center space-x-3">
+                    {% if g.user %}
+                        <a href="{{ url_for('cart') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition shadow flex items-center gap-1">
+                            🎒 Рюкзак
+                        </a>
+                        <span class="text-blue-100 text-sm cursor-default" title="Ви увійшли як {{ g.user['username'] }}">
+                            👤 {{ g.user['username'] }}
+                        </span>
+                        <a href="{{ url_for('logout') }}" class="text-red-200 hover:text-white transition text-sm">Вихід</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-white hover:text-blue-200 border border-white px-3 py-1 rounded hover:bg-white hover:text-blue-500 transition text-sm">Вхід</a>
+                        <a href="{{ url_for('register') }}" class="text-white hover:text-blue-200 text-sm">Реєстрація</a>
+                    {% endif %}
+                </div>
             </div>
+
             <button id="mobile-menu-button" class="md:hidden text-white w-6 h-6 relative focus:outline-none">
                 <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line1"></span>
                 <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line2"></span>
                 <span class="burger-line block absolute h-0.5 w-6 bg-current transform transition duration-500 ease-in-out line3"></span>
             </button>
         </div>
+
         <div id="mobile-menu" class="hidden md:hidden overflow-hidden">
-            <a href="/" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Головна</a>
-            <a href="/guides" class="block text-white hover:text-blue-200 ...">Гайди</a>
-            <a href="/about" class="block text-white hover:text-blue-200 ...">Про нас</a>
-            <a href="/characters" class="block text-white hover:text-blue-200 ...">Персонажі</a>
-            <a href="/map" class="block text-white hover:text-blue-200 py-2 transform transition duration-300 hover:translate-x-2">Мапа</a>
+            <div class="pt-2 pb-4 space-y-1">
+                <a href="{{ url_for('home') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Головна</a>
+                <a href="{{ url_for('shop') }}" class="block text-yellow-300 font-bold hover:bg-blue-600 px-3 py-2 rounded transition">🏪 Магазин</a>
+                <a href="{{ url_for('guides') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Гайди</a>
+                <a href="{{ url_for('about') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Про нас</a>
+                <a href="{{ url_for('characters') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Персонажі</a>
+                <a href="{{ url_for('map') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Мапа</a>
+                <a href="{{ url_for('feedback') }}" class="block text-white hover:bg-blue-600 px-3 py-2 rounded transition">Відгуки</a>
+                
+                <div class="border-t border-blue-400 my-2 pt-2">
+                    {% if g.user %}
+                        <div class="px-3 text-blue-100 text-sm mb-2">Привіт, {{ g.user['username'] }}!</div>
+                        <a href="{{ url_for('cart') }}" class="block text-white bg-blue-600 mx-3 px-3 py-2 rounded text-center mb-2">🎒 Мій Рюкзак</a>
+                        <a href="{{ url_for('logout') }}" class="block text-red-200 hover:text-white px-3 py-2">Вихід</a>
+                    {% else %}
+                        <div class="grid grid-cols-2 gap-2 px-3">
+                            <a href="{{ url_for('login') }}" class="block text-center text-blue-500 bg-white px-3 py-2 rounded font-bold">Вхід</a>
+                            <a href="{{ url_for('register') }}" class="block text-center text-white border border-white px-3 py-2 rounded">Реєстрація</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="container mx-auto mt-8 p-4">
+    <div class="container mx-auto mt-8 p-4 flex-grow">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 shadow-md rounded relative" role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
     </div>
+
+    <footer class="bg-gray-800 text-gray-400 text-center py-6 mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2024 Stardew Valley Fan Hub. Створено з любов'ю до гри.</p>
+        </div>
+    </footer>
 
     <script>
         const mobileMenuButton = document.getElementById('mobile-menu-button');
