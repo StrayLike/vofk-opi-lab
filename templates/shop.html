@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Магазин П'єра{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-green-800">Магазин П'єра</h1>
+    <div class="space-x-2">
+        <a href="{{ url_for('shop') }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Всі</a>
+        <a href="{{ url_for('shop', category='Насіння') }}" class="px-3 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 text-sm">🌱 Насіння</a>
+        <a href="{{ url_for('shop', category='Зброя') }}" class="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm">⚔️ Зброя</a>
+        <a href="{{ url_for('shop', category='Артефакти') }}" class="px-3 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 text-sm">💎 Артефакти</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {% for product in products %}
+    <div class="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-xl transition duration-300 flex flex-col">
+        <div class="h-48 bg-gray-50 flex items-center justify-center p-4 relative">
+            <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="max-h-full max-w-full object-contain drop-shadow-md">
+            <span class="absolute top-2 right-2 bg-white/80 px-2 py-0.5 rounded text-xs font-bold text-gray-500">{{ product['category'] }}</span>
+        </div>
+        <div class="p-4 flex-grow flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-1">{{ product['name'] }}</h3>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="text-xl font-bold text-yellow-600 flex items-center gap-1">
+                    {{ product['price'] }}g <span class="text-xs text-gray-400 font-normal">золота</span>
+                </span>
+                <form action="{{ url_for('add_to_cart', id=product['id']) }}" method="post">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition transform hover:scale-105 active:scale-95">
+                        Купити
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
