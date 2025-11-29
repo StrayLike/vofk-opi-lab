@@ -106,3 +106,76 @@ def update_product(id):
         return jsonify({"message": "Updated"}), 200
         
     return jsonify({"error": "Nothing to update"}), 400
+# --- ЗАМОВЛЕННЯ ---
+
+@api_bp.route('/orders', methods=['POST'])
+def create_order_api():
+    """
+    Створити замовлення
+    ---
+    tags:
+      - Orders
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id:
+                    type: integer
+                  quantity:
+                    type: integer
+    responses:
+      201:
+        description: Замовлення створено
+    """
+    data = request.get_json()
+    if not data or 'items' not in data:
+        return jsonify({"error": "No items provided"}), 400
+
+    db = get_db()
+    total = 0 
+    # Рахуємо суму
+    for item in data['items']:
+        prod = db.execute('SELECT price FROM products WHERE id = ?', (item['product_id'],)).fetchone()
+        if prod:
+            total += prod['price'] * item['quantity']
+
+    cursor = db.execute('INSERT INTO orders (user_id, total_price) VALUES (?, ?)', 
+                        (data.get('user_id', 1), total))
+    order_id = cursor.lastrowid
+
+    for item in data['items']:
+        db.execute('INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)',
+                   (order_id, item['product_id'], item['quantity']))
+    
+    db.commit()
+    return jsonify({"order_id": order_id, "total": total, "status": "created"}), 201
+
+@api_bp.route('/orders/<int:id>', methods=['GET'])
+def get_order(id):
+    """
+    Отримати деталі замовлення
+    ---
+    tags:
+      - Orders
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+    """
+    db = get_db()
+    db.row_factory = dict_factory
+    order = db.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
+    if order:
+        return jsonify(order), 200
+    return jsonify({"error": "Order not found"}), 404
