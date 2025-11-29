@@ -3,19 +3,22 @@ import functools
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, close_db, init_db
+from flasgger import Swagger  # НОВЕ
+from api import api_bp        # НОВЕ
 
 app = Flask(__name__)
-# Цей ключ потрібен для шифрування сесій (щоб працював вхід і кошик)
 app.secret_key = 'stardew_valley_secret_key_change_me'
 
-# Автоматично закриваємо з'єднання з БД після кожного запиту
-app.teardown_appcontext(close_db)
+# Ініціалізація Swagger (автоматична документація)
+Swagger(app)
 
-# --- ДОПОМІЖНІ ФУНКЦІЇ ---
+# Реєстрація API Blueprint
+app.register_blueprint(api_bp)
+
+app.teardown_appcontext(close_db)
 
 @app.before_request
 def load_logged_in_user():
-    """Перед кожним відкриттям сторінки перевіряємо, чи увійшов користувач"""
     user_id = session.get('user_id')
     if user_id is None:
         g.user = None
@@ -23,7 +26,6 @@ def load_logged_in_user():
         g.user = get_db().execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
 
 def login_required(view):
-    """Декоратор, який не пускає незареєстрованих на певні сторінки"""
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
@@ -31,30 +33,23 @@ def login_required(view):
         return view(**kwargs)
     return wrapped_view
 
-# --- МАРШРУТИ СТОРІНОК ---
-
+# --- СТАРІ МАРШРУТИ ---
 @app.route('/')
-def home():
-    return render_template('home.html')
+def home(): return render_template('home.html')
 
 @app.route('/about')
-def about():
-    return render_template('about.html')
+def about(): return render_template('about.html')
 
 @app.route('/guides')
-def guides():
-    return render_template('guides.html') 
+def guides(): return render_template('guides.html') 
 
 @app.route('/characters')
-def characters():
-    return render_template('characters.html')
+def characters(): return render_template('characters.html')
     
 @app.route('/map')
-def map():
-    return render_template('map.html')
+def map(): return render_template('map.html')
 
 # --- АВТОРИЗАЦІЯ ---
-
 @app.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
@@ -63,9 +58,8 @@ def register():
         email = request.form['email']
         db = get_db()
         error = None
-
-        if not username: error = 'Введіть логін.'
-        elif not password: error = 'Введіть пароль.'
+        if not username: error = 'Login required.'
+        elif not password: error = 'Password required.'
         
         if error is None:
             try:
@@ -75,7 +69,7 @@ def register():
                 db.commit()
                 return redirect(url_for('login'))
             except db.IntegrityError:
-                error = f"Користувач {username} вже існує."
+                error = f"User {username} already exists."
         flash(error)
     return render_template('register.html')
 
@@ -87,10 +81,8 @@ def login():
         db = get_db()
         error = None
         user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-
         if user is None or not check_password_hash(user['password'], password):
-            error = 'Невірний логін або пароль.'
-
+            error = 'Incorrect login or password.'
         if error is None:
             session.clear()
             session['user_id'] = user['id']
@@ -104,8 +96,7 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# --- МАГАЗИН І КОШИК ---
-
+# --- МАГАЗИН І КОШИК (WEB) ---
 @app.route('/shop')
 def shop():
     category = request.args.get('category')
@@ -118,8 +109,7 @@ def shop():
 
 @app.route('/add_to_cart/<int:id>', methods=('POST',))
 def add_to_cart(id):
-    if 'cart' not in session:
-        session['cart'] = []
+    if 'cart' not in session: session['cart'] = []
     session['cart'].append(id)
     session.modified = True
     return redirect(url_for('shop'))
@@ -131,10 +121,8 @@ def cart():
     items = []
     total = 0
     if cart_ids:
-        # Магія SQL: перетворюємо список ID у запит
         placeholders = ','.join('?' for _ in cart_ids)
         items = db.execute(f'SELECT * FROM products WHERE id IN ({placeholders})', cart_ids).fetchall()
-        # Рахуємо суму
         for item in items:
             count = cart_ids.count(item['id'])
             total += item['price'] * count
@@ -145,29 +133,19 @@ def cart():
 def checkout():
     cart_ids = session.get('cart', [])
     if not cart_ids: return redirect(url_for('shop'))
-    
     db = get_db()
-    # Рахуємо суму знову (для безпеки)
     placeholders = ','.join('?' for _ in cart_ids)
     products = db.execute(f'SELECT * FROM products WHERE id IN ({placeholders})', cart_ids).fetchall()
     total = sum(p['price'] * cart_ids.count(p['id']) for p in products)
-
-    # Створюємо замовлення
     cursor = db.execute('INSERT INTO orders (user_id, total_price) VALUES (?, ?)', (g.user['id'], total))
     order_id = cursor.lastrowid
-
-    # Додаємо товари в замовлення
     for p in products:
         count = cart_ids.count(p['id'])
-        # Щоб не додавати дублікати, можна додати логіку, але поки так
         db.execute('INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)',
                    (order_id, p['id'], count))
-    
     db.commit()
-    session.pop('cart', None) # Очищуємо кошик
+    session.pop('cart', None)
     return redirect(url_for('home'))
-
-# --- ВІДГУКИ ---
 
 @app.route('/feedback', methods=('GET', 'POST'))
 def feedback():
@@ -180,13 +158,9 @@ def feedback():
                    (g.user['username'], text, rating))
         db.commit()
         return redirect(url_for('feedback'))
-    
     feedbacks = db.execute('SELECT * FROM feedback ORDER BY created_at DESC').fetchall()
     return render_template('feedback.html', feedbacks=feedbacks)
 
-# --- ЗАПУСК ---
 if __name__ == '__main__':
-    # Якщо файлу бази немає - створити його
-    if not os.path.exists('database.db'):
-        init_db()
+    if not os.path.exists('database.db'): init_db()
     app.run(debug=True)
