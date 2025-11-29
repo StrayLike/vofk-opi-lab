@@ -179,3 +179,76 @@ def get_order(id):
     if order:
         return jsonify(order), 200
     return jsonify({"error": "Order not found"}), 404
+    @api_bp.route('/products', methods=['GET'])
+def get_products():
+    """
+    Отримати список всіх товарів
+    ---
+    tags:
+      - Products
+    responses:
+      200:
+        description: Список товарів успішно отримано
+    """
+    db = get_db()
+    db.row_factory = dict_factory
+    products = db.execute('SELECT * FROM products').fetchall()
+    return jsonify(products), 200
+
+@api_bp.route('/products/<int:id>', methods=['GET'])
+def get_product(id):
+    """
+    Отримати один товар за ID
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Товар знайдено
+      404:
+        description: Товар не знайдено
+    """
+    db = get_db()
+    db.row_factory = dict_factory
+    product = db.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
+    if product:
+        return jsonify(product), 200
+    return jsonify({"error": "Product not found"}), 404
+
+@api_bp.route('/products/<int:id>', methods=['DELETE'])
+def delete_product(id):
+    """
+    Видалити товар (Тільки для адмінів)
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Товар видалено
+      403:
+        description: Доступ заборонено
+      404:
+        description: Товар не знайдено
+    """
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized. Admin only."}), 403
+
+    db = get_db()
+    cursor = db.execute('DELETE FROM products WHERE id = ?', (id,))
+    
+    # Перевіряємо, чи був видалений хоча б один рядок
+    if cursor.rowcount == 0:
+        return jsonify({"error": "Product not found"}), 404
+        
+    db.commit()
+    return jsonify({"message": f"Product {id} deleted"}), 200
