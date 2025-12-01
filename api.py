@@ -11,6 +11,8 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
+# --- СИСТЕМА ---
+
 @api_bp.route('/status', methods=['GET'])
 def get_status():
     """
@@ -21,13 +23,52 @@ def get_status():
     responses:
       200:
         description: API працює
-        schema:
-          type: object
-          properties:
-            status:
-              type: string
     """
-    return jsonify({"status": "ok", "version": "1.0"})
+    return jsonify({"status": "ok", "version": "1.0"}), 200
+
+# --- ПРОДУКТИ (CRUD) ---
+
+@api_bp.route('/products', methods=['GET'])
+def get_products():
+    """
+    Отримати список всіх товарів
+    ---
+    tags:
+      - Products
+    responses:
+      200:
+        description: Список товарів успішно отримано
+    """
+    db = get_db()
+    db.row_factory = dict_factory
+    products = db.execute('SELECT * FROM products').fetchall()
+    return jsonify(products), 200
+
+@api_bp.route('/products/<int:id>', methods=['GET'])
+def get_product(id):
+    """
+    Отримати один товар за ID
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Товар знайдено
+      404:
+        description: Товар не знайдено
+    """
+    db = get_db()
+    db.row_factory = dict_factory
+    product = db.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
+    if product:
+        return jsonify(product), 200
+    return jsonify({"error": "Product not found"}), 404
+
 @api_bp.route('/products', methods=['POST'])
 def create_product():
     """
@@ -46,10 +87,6 @@ def create_product():
               type: string
             price:
               type: number
-            category:
-              type: string
-            image:
-              type: string
     responses:
       201:
         description: Створено
@@ -93,6 +130,9 @@ def update_product(id):
           properties:
             price:
               type: number
+    responses:
+      200:
+        description: Оновлено
     """
     if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
     
@@ -106,6 +146,36 @@ def update_product(id):
         return jsonify({"message": "Updated"}), 200
         
     return jsonify({"error": "Nothing to update"}), 400
+
+@api_bp.route('/products/<int:id>', methods=['DELETE'])
+def delete_product(id):
+    """
+    Видалити товар (Admin)
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Видалено
+      403:
+        description: Немає прав
+      404:
+        description: Товар не знайдено
+    """
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized. Admin only."}), 403
+    db = get_db()
+    cursor = db.execute('DELETE FROM products WHERE id = ?', (id,))
+    if cursor.rowcount == 0:
+        return jsonify({"error": "Product not found"}), 404
+    db.commit()
+    return jsonify({"message": f"Product {id} deleted"}), 200
+
 # --- ЗАМОВЛЕННЯ ---
 
 @api_bp.route('/orders', methods=['POST'])
@@ -143,7 +213,6 @@ def create_order_api():
 
     db = get_db()
     total = 0 
-    # Рахуємо суму
     for item in data['items']:
         prod = db.execute('SELECT price FROM products WHERE id = ?', (item['product_id'],)).fetchone()
         if prod:
@@ -179,76 +248,3 @@ def get_order(id):
     if order:
         return jsonify(order), 200
     return jsonify({"error": "Order not found"}), 404
-    @api_bp.route('/products', methods=['GET'])
-def get_products():
-    """
-    Отримати список всіх товарів
-    ---
-    tags:
-      - Products
-    responses:
-      200:
-        description: Список товарів успішно отримано
-    """
-    db = get_db()
-    db.row_factory = dict_factory
-    products = db.execute('SELECT * FROM products').fetchall()
-    return jsonify(products), 200
-
-@api_bp.route('/products/<int:id>', methods=['GET'])
-def get_product(id):
-    """
-    Отримати один товар за ID
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Товар знайдено
-      404:
-        description: Товар не знайдено
-    """
-    db = get_db()
-    db.row_factory = dict_factory
-    product = db.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
-    if product:
-        return jsonify(product), 200
-    return jsonify({"error": "Product not found"}), 404
-
-@api_bp.route('/products/<int:id>', methods=['DELETE'])
-def delete_product(id):
-    """
-    Видалити товар (Тільки для адмінів)
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Товар видалено
-      403:
-        description: Доступ заборонено
-      404:
-        description: Товар не знайдено
-    """
-    if session.get('role') != 'admin':
-        return jsonify({"error": "Unauthorized. Admin only."}), 403
-
-    db = get_db()
-    cursor = db.execute('DELETE FROM products WHERE id = ?', (id,))
-    
-    # Перевіряємо, чи був видалений хоча б один рядок
-    if cursor.rowcount == 0:
-        return jsonify({"error": "Product not found"}), 404
-        
-    db.commit()
-    return jsonify({"message": f"Product {id} deleted"}), 200
