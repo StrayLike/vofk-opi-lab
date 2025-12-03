@@ -162,5 +162,22 @@ def feedback():
     return render_template('feedback.html', feedbacks=feedbacks)
 
 if __name__ == '__main__':
-    if not os.path.exists('database.db'): init_db()
+    if not os.path.exists('database.db'): 
+        # 1. Ініціалізуємо таблиці
+        init_db()
+        
+        # 2. Створюємо адміна гарантовано через Flask-контекст
+        with app.app_context():
+            db = get_db()
+            hashed_pw = generate_password_hash('admin123') # ГЕНЕРУЄМО ХЕШ ПРЯМО ЗАРАЗ
+            try:
+                db.execute(
+                    'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+                    ('admin', 'admin@stardew.com', hashed_pw, 'admin')
+                )
+                db.commit()
+                print("✅ АДМІНІСТРАТОР СТВОРЕНИЙ: Логін: admin, Пароль: admin123")
+            except Exception as e:
+                print(f"Помилка при створенні адміна: {e}. (Це ОК, якщо він вже був)")
+
     app.run(debug=True)
