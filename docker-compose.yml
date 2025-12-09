@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Наш Flask додаток
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stardew_app
+    # Експортуємо порт 5000 тільки для Nginx (назовні він закритий)
+    expose:
+      - "5000"
+    env_file:
+      - .env
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Nginx (Reverse Proxy) - Це для Високого рівня
+  nginx:
+    image: nginx:alpine
+    container_name: stardew_nginx
+    ports:
+      - "80:80"  # Сайт буде доступний просто як http://localhost
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+    driver: local
