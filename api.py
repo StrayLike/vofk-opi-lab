@@ -1,250 +1,133 @@
 from flask import Blueprint, jsonify, request, session, g
 from db import get_db
 
-# Створюємо Blueprint версії 1
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 
-# Допоміжна функція: перетворення рядків БД у словник (JSON)
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
 
-# --- СИСТЕМА ---
+# --- ДОПОМІЖНА ФУНКЦІЯ: ЗНАХОДИТИ КОРИСТУВАЧА ЗА ІМ'ЯМ ТА EMAIL ---
+def get_user_by_credentials(username, email):
+    db = get_db()
+    # Шукаємо користувача, але БЕЗ перевірки пароля
+    user = db.execute('SELECT * FROM users WHERE username = ? AND email = ?', (username, email)).fetchone()
+    return user
 
+# --- СИСТЕМА ---
 @api_bp.route('/status', methods=['GET'])
 def get_status():
-    """
-    Перевірка статусу API
-    ---
-    tags:
-      - System
-    responses:
-      200:
-        description: API працює
-    """
     return jsonify({"status": "ok", "version": "1.0"}), 200
 
-# --- ПРОДУКТИ (CRUD) ---
-
+# --- ТОВАРИ (PRODUCTS) ---
 @api_bp.route('/products', methods=['GET'])
 def get_products():
-    """
-    Отримати список всіх товарів
-    ---
-    tags:
-      - Products
-    responses:
-      200:
-        description: Список товарів успішно отримано
-    """
     db = get_db()
     db.row_factory = dict_factory
     products = db.execute('SELECT * FROM products').fetchall()
     return jsonify(products), 200
 
-@api_bp.route('/products/<int:id>', methods=['GET'])
-def get_product(id):
-    """
-    Отримати один товар за ID
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Товар знайдено
-      404:
-        description: Товар не знайдено
-    """
-    db = get_db()
-    db.row_factory = dict_factory
-    product = db.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
-    if product:
-        return jsonify(product), 200
-    return jsonify({"error": "Product not found"}), 404
-
 @api_bp.route('/products', methods=['POST'])
 def create_product():
-    """
-    Створити новий товар
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          properties:
-            name:
-              type: string
-            price:
-              type: number
-    responses:
-      201:
-        description: Створено
-      400:
-        description: Помилка валідації
-    """
-    if session.get('role') != 'admin':
-        return jsonify({"error": "Admin only"}), 403
-
+    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
     data = request.get_json()
-    
-    # ВАЛІДАЦІЯ
     if not data or 'name' not in data or 'price' not in data:
         return jsonify({"error": "Missing name or price"}), 400
-    if data['price'] < 0:
-        return jsonify({"error": "Price cannot be negative"}), 400
+    if data['price'] < 0: return jsonify({"error": "Price cannot be negative"}), 400
 
     db = get_db()
     cursor = db.execute('INSERT INTO products (name, price, category, image) VALUES (?, ?, ?, ?)',
                (data['name'], data['price'], data.get('category', 'General'), data.get('image', '')))
     db.commit()
-    
     return jsonify({"id": cursor.lastrowid, "message": "Created"}), 201
-
-@api_bp.route('/products/<int:id>', methods=['PUT'])
-def update_product(id):
-    """
-    Оновити товар
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-      - name: body
-        in: body
-        schema:
-          type: object
-          properties:
-            price:
-              type: number
-    responses:
-      200:
-        description: Оновлено
-    """
-    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
-    
-    data = request.get_json()
-    db = get_db()
-    
-    if 'price' in data:
-        if data['price'] < 0: return jsonify({"error": "Invalid price"}), 400
-        db.execute('UPDATE products SET price = ? WHERE id = ?', (data['price'], id))
-        db.commit()
-        return jsonify({"message": "Updated"}), 200
-        
-    return jsonify({"error": "Nothing to update"}), 400
 
 @api_bp.route('/products/<int:id>', methods=['DELETE'])
 def delete_product(id):
-    """
-    Видалити товар (Admin)
-    ---
-    tags:
-      - Products
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Видалено
-      403:
-        description: Немає прав
-      404:
-        description: Товар не знайдено
-    """
-    if session.get('role') != 'admin':
-        return jsonify({"error": "Unauthorized. Admin only."}), 403
+    if session.get('role') != 'admin': return jsonify({"error": "Unauthorized"}), 403
     db = get_db()
-    cursor = db.execute('DELETE FROM products WHERE id = ?', (id,))
-    if cursor.rowcount == 0:
-        return jsonify({"error": "Product not found"}), 404
+    db.execute('DELETE FROM products WHERE id = ?', (id,))
     db.commit()
-    return jsonify({"message": f"Product {id} deleted"}), 200
+    return jsonify({"message": "Deleted"}), 200
 
-# --- ЗАМОВЛЕННЯ ---
+# --- ВІДГУКИ (FEEDBACK) - СТВОРЕННЯ БЕЗ ПАРОЛЯ ---
+@api_bp.route('/feedback', methods=['GET'])
+def get_feedbacks():
+    db = get_db()
+    db.row_factory = dict_factory
+    feedbacks = db.execute('SELECT * FROM feedback ORDER BY created_at DESC').fetchall()
+    return jsonify(feedbacks), 200
 
+@api_bp.route('/feedback', methods=['POST'])
+def create_feedback_api():
+    """Створення відгуку: перевіряємо лише наявність полів"""
+    data = request.get_json()
+    
+    required_fields = ['username', 'email', 'text', 'rating']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Відсутні обов'язкові поля"}), 400
+        
+    if not (1 <= data['rating'] <= 5):
+        return jsonify({"error": "Оцінка повинна бути від 1 до 5"}), 400
+        
+    db = get_db()
+    # Створюємо відгук, використовуючи надані username/email
+    db.execute('INSERT INTO feedback (username, text, rating) VALUES (?, ?, ?)',
+               (data['username'], data['text'], data['rating']))
+    db.commit()
+    return jsonify({"message": "Відгук успішно створено"}), 201
+
+@api_bp.route('/feedback/<int:id>', methods=['DELETE'])
+def delete_feedback(id):
+    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
+    db = get_db()
+    db.execute('DELETE FROM feedback WHERE id = ?', (id,))
+    db.commit()
+    return jsonify({"message": "Feedback deleted"}), 200
+
+# --- ЗАМОВЛЕННЯ (ORDERS) - СТВОРЕННЯ БЕЗ ПАРОЛЯ, АЛЕ З ПОШУКОМ USER_ID ---
 @api_bp.route('/orders', methods=['POST'])
 def create_order_api():
-    """
-    Створити замовлення
-    ---
-    tags:
-      - Orders
-    parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          properties:
-            user_id:
-              type: integer
-            items:
-              type: array
-              items:
-                type: object
-                properties:
-                  product_id:
-                    type: integer
-                  quantity:
-                    type: integer
-    responses:
-      201:
-        description: Замовлення створено
-    """
+    """Створити замовлення: перевіряємо користувача за ім'ям та email"""
     data = request.get_json()
-    if not data or 'items' not in data:
-        return jsonify({"error": "No items provided"}), 400
-
+    
+    required_fields = ['username', 'email', 'items']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Відсутні обов'язкові поля для замовлення"}), 400
+        
+    # ВЕРИФІКАЦІЯ: ЗНАХОДИМО КОРИСТУВАЧА ДЛЯ user_id БЕЗ ПАРОЛЯ
+    user = get_user_by_credentials(data['username'], data['email'])
+    if user is None:
+        return jsonify({"error": "Користувач з такими ім'ям та email не знайдений."}), 400
+        
+    user_id = user['id']
+    
+    # Решта логіки замовлення
     db = get_db()
     total = 0 
     for item in data['items']:
         prod = db.execute('SELECT price FROM products WHERE id = ?', (item['product_id'],)).fetchone()
-        if prod:
-            total += prod['price'] * item['quantity']
-
-    cursor = db.execute('INSERT INTO orders (user_id, total_price) VALUES (?, ?)', 
-                        (data.get('user_id', 1), total))
+        if prod: total += prod['price'] * item['quantity']
+        
+    cursor = db.execute('INSERT INTO orders (user_id, total_price) VALUES (?, ?)', (user_id, total))
     order_id = cursor.lastrowid
-
+    
     for item in data['items']:
         db.execute('INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)',
                    (order_id, item['product_id'], item['quantity']))
-    
     db.commit()
-    return jsonify({"order_id": order_id, "total": total, "status": "created"}), 201
+    return jsonify({"order_id": order_id, "total": total, "message": "Замовлення успішно створено"}), 201
 
-@api_bp.route('/orders/<int:id>', methods=['GET'])
-def get_order(id):
-    """
-    Отримати деталі замовлення
-    ---
-    tags:
-      - Orders
-    parameters:
-      - name: id
-        in: path
-        required: true
-        type: integer
-    """
+@api_bp.route('/orders', methods=['GET'])
+def get_all_orders():
+    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
     db = get_db()
     db.row_factory = dict_factory
-    order = db.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
-    if order:
-        return jsonify(order), 200
-    return jsonify({"error": "Order not found"}), 404
+    orders = db.execute('''
+        SELECT o.id, o.total_price, o.created_at, u.username 
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        ORDER BY o.created_at DESC
+    ''').fetchall()
+    return jsonify(orders), 200
