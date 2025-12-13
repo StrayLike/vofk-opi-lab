@@ -2,25 +2,26 @@
 {% block title %}Stardew Valley Fan Hub{% endblock %} 
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-4">Ласкаво просимо до Пелікан-тауну!</h1>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-        <img
-            src="https://upload.wikimedia.org/wikipedia/uk/f/fd/Logo_of_Stardew_Valley.png"
-            alt="Ферма у Stardew Valley"
-            class="w-full rounded-lg shadow-md"
-        />
-    </div>
-    <div>
-        <p class="text-lg mb-2">
-            Ви успадкували стару фермерську ділянку свого дідуся в Stardew Valley. 
-            Озброївшись старими інструментами та кількома монетами, ви 
-            вирушаєте, щоб почати своє нове життя.
-        </p>
-        <p class="text-lg">
-            Цей сайт присвячений цій чудовій грі. Тут ми збираємо гайди, 
-            ділимося секретами та просто насолоджуємося атмосферою долини.
-        </p>
+<div class="bg-white rounded-3xl shadow-xl overflow-hidden mb-12 border-4 border-yellow-200">
+    <div class="grid grid-cols-1 md:grid-cols-2">
+        <div class="p-10 flex flex-col justify-center">
+            <h1 class="text-5xl font-bold text-slate-800 mb-6 leading-tight">
+                Ласкаво просимо до <span class="text-green-600">Пелікан-тауну!</span>
+            </h1>
+            <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                Ви успадкували стару фермерську ділянку свого дідуся в Stardew Valley. Озброївшись старими інструментами та кількома монетами, ви вирушаєте, щоб почати своє нове життя!
+            </p>
+            <div class="flex gap-4">
+                <a href="{{ url_for('shop') }}" class="bg-yellow-500 hover:bg-yellow-600 text-slate-800 font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-yellow-200 transition transform hover:-translate-y-1">
+                    🛍️ Відвідати Магазин
+                </a>
+                <a href="{{ url_for('guides') }}" class="bg-white text-slate-700 border-2 border-slate-300 hover:border-green-400 font-bold py-3 px-8 rounded-full transition">
+                    📖 Читати Гайди
+                </a>
+            </div>
+        </div>
+        <div class="h-full min-h-[300px] bg-cover bg-center" style="background-image: url('https://upload.wikimedia.org/wikipedia/uk/f/fd/Logo_of_Stardew_Valley.png');">
+        </div>
     </div>
 </div>
 {% endblock %}

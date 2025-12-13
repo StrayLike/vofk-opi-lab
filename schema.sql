@@ -53,10 +53,10 @@ CREATE TABLE order_items (
 
 -- ЗАПОВНЮЄМО МАГАЗИН ТОВАРАМИ (Початкові дані)
 INSERT INTO products (name, price, category, image) VALUES 
-('Зоряна крапля', 5000, 'Артефакти', 'https://stardewvalleywiki.com/mediawiki/images/a/a5/Stardrop.png'),
-('Блакитна курка', 2000, 'Тварини', 'https://stardewvalleywiki.com/mediawiki/images/f/fd/Blue_Chicken.png'),
-('Меч Галактики', 1500, 'Зброя', 'https://stardewvalleywiki.com/mediawiki/images/e/e9/Galaxy_Sword.png'),
-('Золотий Гарбуз', 300, 'Насіння', 'https://stardewvalleywiki.com/mediawiki/images/6/64/Pumpkin.png');
+('Зоряна крапля', 5000, 'Артефакти', '/static/images/shop/Stardrop.png'),
+('Блакитна курка', 2000, 'Тварини', '/static/images/shop/Blue_Chicken.png'),
+('Меч Галактики', 1500, 'Зброя', '/static/images/shop/Galaxy_Sword.png'),
+('Золотий Гарбуз', 300, 'Насіння', '/static/images/shop/Pumpkin.png');
 
 INSERT INTO users (username, email, password, role) VALUES
 ('admin', 'admin@stardewhub.com', 'pbkdf2:sha256:260000$tJ0l0Lh0Kz5b$0a370e28b8b0e77d0a649d29037e930f7b09d06b12a832f0c7e279b9a67a05e2', 'admin');
