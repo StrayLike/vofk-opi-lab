@@ -1,27 +1,37 @@
 {% extends "base.html" %} 
-{% block title %}Про нас{% endblock %} 
+{% block title %}Про нас та команда{% endblock %} 
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-4">Про наш Fan Hub</h1>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-        <p class="text-lg mb-2">
-            Ми - невелика група ентузіастів (і студентів!), які провели 
-            сотні годин, вирощуючи ріпу та досліджуючи шахти. 
-            Наша місія — створити затишний українськомовний куточок 
-            для всіх фанатів Stardew Valley.
-        </p>
-        <p class="text-lg">
-            Цей сайт є нашою лабораторною роботою з основ програмної інженерії, 
-            але ми робимо його з душею!
-        </p>
+<div class="bg-white p-8 rounded-3xl shadow-xl border-l-8 border-green-600 mb-8">
+    <h1 class="text-4xl font-bold mb-4 text-green-700">🌱 Про наш Fan Hub та команду</h1>
+    <p class="text-lg text-slate-600 mb-8">
+        Ми — невелика група ентузіастів (і студентів!), які створили цей українськомовний куточок 
+        для всіх фанатів Stardew Valley. Наш проєкт є фінальною **лабораторною роботою з програмної інженерії**, 
+        що об'єднала Flask, Docker та сучасний Frontend.
+    </p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-lg border-2 border-slate-200">
+        <h2 class="text-2xl font-bold mb-3 text-slate-800">Наша місія</h2>
+        <div class="flex flex-col md:flex-row gap-4 items-start">
+            <img
+                src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_616x353.jpg?t=1754692865"
+                alt="Персонажі Stardew Valley"
+                class="w-full md:w-1/2 rounded-lg shadow-md border border-gray-100"
+            />
+            <p class="text-slate-600">
+                Забезпечити спільноту надійним ресурсом: від гайдів і мап до функціонального магазину та системи відгуків. Ми використовували професійні технічні рішення, такі як **RESTful API** (Лаба 5), **SPA-адмінка** (Лаба 6) та **контейнеризація з Nginx** (Лаба 8), щоб створити швидкий та стабільний продукт.
+            </p>
+        </div>
     </div>
-    <div>
-        <img
-            src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_616x353.jpg?t=1754692865"
-            alt="Персонажі Stardew Valley"
-            class="w-full rounded-lg shadow-md"
-        />
+
+    <div class="bg-slate-800 p-6 rounded-xl shadow-lg border-2 border-yellow-500 text-white flex flex-col justify-between">
+        <h2 class="text-2xl font-bold mb-4 text-yellow-400">🔗 Репозиторій та Технології</h2>
+        <p class="mb-4">Весь код, включаючи фінальну версію, Docker-конфігурації та звіти, доступний на GitHub.</p>
+        <a href="https://github.com/StrayLike/vofk-opi-lab" target="_blank" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 px-6 rounded-lg text-center shadow-lg transition transform hover:scale-105">
+            Переглянути на GitHub
+        </a>
     </div>
 </div>
 {% endblock %}

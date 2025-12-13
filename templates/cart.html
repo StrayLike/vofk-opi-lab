@@ -1,64 +1,96 @@
 {% extends "base.html" %}
 {% block title %}Ваш Рюкзак{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold mb-8 flex items-center gap-2">
-    🎒 Ваш рюкзак
-</h1>
+
+<h1 class="text-4xl font-bold mb-8 text-green-700">🎒 Ваш Рюкзак (Кошик)</h1>
 
 {% if cart_items %}
-<div class="flex flex-col lg:flex-row gap-8">
-    <div class="flex-grow bg-white shadow rounded-lg overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-gray-100 border-b">
-                <tr>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-gray-600 uppercase">Товар</th>
-                    <th class="px-6 py-4 text-right text-sm font-bold text-gray-600 uppercase">Ціна</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                {% for item in cart_items %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                             <img src="{{ item['image'] }}" class="max-h-full max-w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-4">
+            {% for item in cart_items %}
+                <div class="bg-white p-4 rounded-xl shadow-lg flex items-center justify-between border-l-4 border-yellow-500 hover:shadow-xl transition duration-300">
+                    <div class="flex items-center space-x-4 flex-grow">
+                        <img src="{{ item['image'] }}" alt="{{ item['name'] }}" class="w-16 h-16 object-contain p-1 border rounded-md">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">{{ item['name'] }}</h3>
+                            <p class="text-sm text-slate-500">{{ item['category'] }}</p>
                         </div>
-                        <span class="font-medium text-gray-900">{{ item['name'] }}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-700">{{ item['price'] }}g</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="w-full lg:w-80">
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">Рахунок від Льюїса</h2>
-            <div class="flex justify-between mb-2 text-gray-600">
-                <span>Кількість товарів:</span>
-                <span>{{ cart_items|length }}</span>
-            </div>
-            <div class="flex justify-between mb-6 text-2xl font-bold text-gray-900">
-                <span>Разом:</span>
-                <span class="text-green-600">{{ total }}g</span>
-            </div>
-            <form action="{{ url_for('checkout') }}" method="post">
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition transform hover:-translate-y-1">
-                    Оформити замовлення
+                    </div>
+                    
+                    <div class="flex items-center space-x-6">
+                        <div class="flex items-center border border-green-400 rounded-lg overflow-hidden">
+                            <form action="{{ url_for('update_cart_item', id=item['id'], action='decrease') }}" method="post" class="inline">
+                                <button type="submit" class="bg-white hover:bg-red-200 text-lg text-red-600 font-bold p-2 transition duration-150">
+                                    -
+                                </button>
+                            </form>
+                            
+                            <span class="px-4 text-lg font-bold text-slate-800 bg-green-50">
+                                {{ item['quantity'] }}
+                            </span>
+                            
+                            <form action="{{ url_for('update_cart_item', id=item['id'], action='increase') }}" method="post" class="inline">
+                                <button type="submit" class="bg-white hover:bg-green-200 text-lg text-green-600 font-bold p-2 transition duration-150">
+                                    +
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="text-right min-w-[100px]">
+                            <p class="text-sm text-slate-500">x {{ item['price'] }}g</p>
+                            <p class="text-xl font-extrabold text-green-800">{{ item['subtotal'] }}g</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <form action="{{ url_for('clear_cart') }}" method="post" class="mt-6 text-center">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform hover:scale-[1.01] flex items-center justify-center mx-auto gap-2">
+                    🗑️ Очистити весь рюкзак
                 </button>
             </form>
-            <p class="text-xs text-gray-400 text-center mt-3">Доставка в скриньку завтра зранку.</p>
+            
+        </div>
+
+        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-xl sticky top-24 h-fit border-2 border-green-500">
+            <h2 class="text-2xl font-bold mb-4 border-b-2 border-green-200 pb-2 text-slate-800">Підсумок замовлення</h2>
+            
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between text-slate-600">
+                    <span>Товарів (унікальних):</span>
+                    <span class="font-semibold">{{ cart_items | length }}</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                    <span>Загальна кількість:</span>
+                    <span class="font-semibold">{{ g.cart_count }} шт.</span>
+                </div>
+                <div class="flex justify-between text-2xl font-extrabold text-green-800 pt-3 border-t border-green-200">
+                    <span>ВСЬОГО:</span>
+                    <span>{{ total }}g</span>
+                </div>
+            </div>
+            
+            {% if g.user %}
+                <form action="{{ url_for('checkout') }}" method="post">
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                        ✅ Оформити замовлення
+                    </button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="w-full block text-center bg-yellow-500 hover:bg-yellow-600 text-slate-800 text-lg font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                    Авторизуйтесь для оформлення
+                </a>
+            {% endif %}
         </div>
     </div>
-</div>
 {% else %}
-<div class="text-center py-16 bg-white rounded-lg shadow">
-    <div class="text-6xl mb-4">🕸</div>
-    <h2 class="text-2xl font-bold text-gray-700 mb-2">Тут порожньо...</h2>
-    <p class="text-gray-500 mb-6">Схоже, ви ще нічого не купили у П'єра.</p>
-    <a href="{{ url_for('shop') }}" class="bg-blue-500 text-white px-8 py-3 rounded-full hover:bg-blue-600 transition shadow-lg">
-        Перейти до магазину
-    </a>
-</div>
+    <div class="bg-yellow-100 p-8 rounded-xl shadow-lg text-center border-l-4 border-yellow-500">
+        <p class="text-2xl font-bold text-yellow-800 mb-4">Рюкзак порожній!</p>
+        <p class="text-lg text-yellow-700">Переходьте до магазину, щоб почати збирати врожай!</p>
+        <a href="{{ url_for('shop') }}" class="mt-6 inline-block bg-green-600 hover:bg-green-700 text-white py-3 px-8 rounded-full font-bold transition transform hover:scale-105">
+            🏪 До магазину
+        </a>
+    </div>
 {% endif %}
 {% endblock %}

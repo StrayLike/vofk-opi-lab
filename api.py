@@ -9,10 +9,9 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-# --- ДОПОМІЖНА ФУНКЦІЯ: ЗНАХОДИТИ КОРИСТУВАЧА ЗА ІМ'ЯМ ТА EMAIL ---
+# --- ДОПОМІЖНА ФУНКЦІЯ ---
 def get_user_by_credentials(username, email):
     db = get_db()
-    # Шукаємо користувача, але БЕЗ перевірки пароля
     user = db.execute('SELECT * FROM users WHERE username = ? AND email = ?', (username, email)).fetchone()
     return user
 
@@ -21,12 +20,38 @@ def get_user_by_credentials(username, email):
 def get_status():
     return jsonify({"status": "ok", "version": "1.0"}), 200
 
+# [ЛАБА 9] Health Check для Docker/Production
+@api_bp.route('/health', methods=['GET'])
+def get_health():
+    try:
+        db = get_db()
+        db.execute('SELECT 1').fetchone() # Перевірка БД
+        return jsonify({"status": "healthy", "database": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 # --- ТОВАРИ (PRODUCTS) ---
+# [ЛАБА 9] Нова функція: Фільтрація в API
 @api_bp.route('/products', methods=['GET'])
 def get_products():
+    """
+    Отримати список товарів (з фільтрацією)
+    ---
+    parameters:
+      - name: category
+        in: query
+        type: string
+        required: false
+    """
+    category = request.args.get('category')
     db = get_db()
     db.row_factory = dict_factory
-    products = db.execute('SELECT * FROM products').fetchall()
+    
+    if category:
+        products = db.execute('SELECT * FROM products WHERE category = ?', (category,)).fetchall()
+    else:
+        products = db.execute('SELECT * FROM products').fetchall()
+        
     return jsonify(products), 200
 
 @api_bp.route('/products', methods=['POST'])
@@ -51,7 +76,7 @@ def delete_product(id):
     db.commit()
     return jsonify({"message": "Deleted"}), 200
 
-# --- ВІДГУКИ (FEEDBACK) - СТВОРЕННЯ БЕЗ ПАРОЛЯ ---
+# --- ВІДГУКИ (FEEDBACK) ---
 @api_bp.route('/feedback', methods=['GET'])
 def get_feedbacks():
     db = get_db()
@@ -61,18 +86,14 @@ def get_feedbacks():
 
 @api_bp.route('/feedback', methods=['POST'])
 def create_feedback_api():
-    """Створення відгуку: перевіряємо лише наявність полів"""
     data = request.get_json()
-    
     required_fields = ['username', 'email', 'text', 'rating']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Відсутні обов'язкові поля"}), 400
-        
     if not (1 <= data['rating'] <= 5):
         return jsonify({"error": "Оцінка повинна бути від 1 до 5"}), 400
         
     db = get_db()
-    # Створюємо відгук, використовуючи надані username/email
     db.execute('INSERT INTO feedback (username, text, rating) VALUES (?, ?, ?)',
                (data['username'], data['text'], data['rating']))
     db.commit()
@@ -86,24 +107,19 @@ def delete_feedback(id):
     db.commit()
     return jsonify({"message": "Feedback deleted"}), 200
 
-# --- ЗАМОВЛЕННЯ (ORDERS) - СТВОРЕННЯ БЕЗ ПАРОЛЯ, АЛЕ З ПОШУКОМ USER_ID ---
+# --- ЗАМОВЛЕННЯ (ORDERS) ---
 @api_bp.route('/orders', methods=['POST'])
 def create_order_api():
-    """Створити замовлення: перевіряємо користувача за ім'ям та email"""
     data = request.get_json()
-    
     required_fields = ['username', 'email', 'items']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Відсутні обов'язкові поля для замовлення"}), 400
         
-    # ВЕРИФІКАЦІЯ: ЗНАХОДИМО КОРИСТУВАЧА ДЛЯ user_id БЕЗ ПАРОЛЯ
     user = get_user_by_credentials(data['username'], data['email'])
     if user is None:
         return jsonify({"error": "Користувач з такими ім'ям та email не знайдений."}), 400
         
     user_id = user['id']
-    
-    # Решта логіки замовлення
     db = get_db()
     total = 0 
     for item in data['items']:

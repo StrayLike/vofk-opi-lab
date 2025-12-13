@@ -2,35 +2,33 @@
 {% block title %}Мапа Долини{% endblock %} 
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-4">Мапа Долини та Години роботи</h1>
+<h1 class="text-4xl font-bold mb-8 text-blue-700">🗺️ Мапа Долини та Години роботи</h1>
 
-<!-- Мапа -->
-<div class="bg-white p-4 rounded-lg shadow-md mb-6">
+<div class="bg-white p-4 rounded-3xl shadow-xl mb-8 border-2 border-blue-200">
     <img 
         src="https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/fa627641803619.57b4d7a64c1b6.png" 
         alt="Мапа Stardew Valley"
-        class="w-full rounded-lg shadow-md">
+        class="w-full rounded-2xl shadow-lg border border-gray-100">
 </div>
 
-<!-- Години роботи -->
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-semibold mb-4">Ключові локації</h2>
+<div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+    <h2 class="text-2xl font-semibold mb-4 border-b-2 pb-2 text-slate-800">⏰ Ключові локації та час роботи</h2>
     <ul class="divide-y divide-gray-200">
-        <li class="py-3">
-            <h3 class="text-lg font-semibold text-blue-700">Магазин П'єра</h3>
-            <p class="text-gray-600">9:00 - 17:00 (Закрито по середах)</p>
+        <li class="py-3 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-green-700">Магазин П'єра</h3>
+            <p class="text-gray-600 font-medium">9:00 - 17:00 (Закрито по середах)</p>
         </li>
-        <li class="py-3">
+        <li class="py-3 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-800">Кузня Клінта</h3>
-            <p class="text-gray-600">9:00 - 16:00</p>
+            <p class="text-gray-600 font-medium">9:00 - 16:00</p>
         </li>
-        <li class="py-3">
+        <li class="py-3 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-orange-700">Ранчо Марні</h3>
-            <p class="text-gray-600">9:00 - 16:00 (Закрито по понеділках та вівторках)</p>
+            <p class="text-gray-600 font-medium">9:00 - 16:00 (Закрито по понеділках та вівторках)</p>
         </li>
-        <li class="py-3">
+        <li class="py-3 flex justify-between items-center">
             <h3 class="text-lg font-semibold text-yellow-600">Салун "Зірковова крапля"</h3>
-            <p class="text-gray-600">12:00 - 0:00 (північ)</p>
+            <p class="text-gray-600 font-medium">12:00 - 0:00 (північ)</p>
         </li>
     </ul>
 </div>
