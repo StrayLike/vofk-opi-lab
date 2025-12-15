@@ -9,7 +9,6 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-# --- ДОПОМІЖНА ФУНКЦІЯ ---
 def get_user_by_credentials(username, email):
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE username = ? AND email = ?', (username, email)).fetchone()
@@ -18,30 +17,53 @@ def get_user_by_credentials(username, email):
 # --- СИСТЕМА ---
 @api_bp.route('/status', methods=['GET'])
 def get_status():
+    """
+    Перевірка статусу API
+    ---
+    tags:
+      - System
+    responses:
+      200:
+        description: API працює
+    """
     return jsonify({"status": "ok", "version": "1.0"}), 200
 
-# [ЛАБА 9] Health Check для Docker/Production
 @api_bp.route('/health', methods=['GET'])
 def get_health():
+    """
+    Healthcheck для Docker
+    ---
+    tags:
+      - System
+    responses:
+      200:
+        description: Система та БД здорові
+      500:
+        description: Помилка підключення до БД
+    """
     try:
         db = get_db()
-        db.execute('SELECT 1').fetchone() # Перевірка БД
+        db.execute('SELECT 1').fetchone()
         return jsonify({"status": "healthy", "database": "connected"}), 200
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
-# --- ТОВАРИ (PRODUCTS) ---
-# [ЛАБА 9] Нова функція: Фільтрація в API
+# --- ТОВАРИ ---
 @api_bp.route('/products', methods=['GET'])
 def get_products():
     """
-    Отримати список товарів (з фільтрацією)
+    Отримати список товарів
     ---
+    tags:
+      - Products
     parameters:
       - name: category
         in: query
         type: string
-        required: false
+        description: Фільтр за категорією (наприклад, 'Насіння')
+    responses:
+      200:
+        description: Список товарів успішно отримано
     """
     category = request.args.get('category')
     db = get_db()
@@ -56,7 +78,34 @@ def get_products():
 
 @api_bp.route('/products', methods=['POST'])
 def create_product():
-    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
+    """
+    Створити новий товар (Admin)
+    ---
+    tags:
+      - Products
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            price:
+              type: number
+            category:
+              type: string
+            image:
+              type: string
+    responses:
+      201:
+        description: Товар створено
+      403:
+        description: Тільки для адмінів
+    """
+    if session.get('role') != 'admin' and not session.get('admin_access'):
+         return jsonify({"error": "Admin only"}), 403
     data = request.get_json()
     if not data or 'name' not in data or 'price' not in data:
         return jsonify({"error": "Missing name or price"}), 400
@@ -70,15 +119,39 @@ def create_product():
 
 @api_bp.route('/products/<int:id>', methods=['DELETE'])
 def delete_product(id):
-    if session.get('role') != 'admin': return jsonify({"error": "Unauthorized"}), 403
+    """
+    Видалити товар (Admin)
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Товар видалено
+    """
+    if session.get('role') != 'admin' and not session.get('admin_access'):
+        return jsonify({"error": "Unauthorized"}), 403
     db = get_db()
     db.execute('DELETE FROM products WHERE id = ?', (id,))
     db.commit()
     return jsonify({"message": "Deleted"}), 200
 
-# --- ВІДГУКИ (FEEDBACK) ---
+# --- ВІДГУКИ ---
 @api_bp.route('/feedback', methods=['GET'])
 def get_feedbacks():
+    """
+    Отримати всі відгуки
+    ---
+    tags:
+      - Feedback
+    responses:
+      200:
+        description: Список відгуків
+    """
     db = get_db()
     db.row_factory = dict_factory
     feedbacks = db.execute('SELECT * FROM feedback ORDER BY created_at DESC').fetchall()
@@ -86,6 +159,30 @@ def get_feedbacks():
 
 @api_bp.route('/feedback', methods=['POST'])
 def create_feedback_api():
+    """
+    Додати відгук
+    ---
+    tags:
+      - Feedback
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+            text:
+              type: string
+            rating:
+              type: integer
+    responses:
+      201:
+        description: Відгук додано
+    """
     data = request.get_json()
     required_fields = ['username', 'email', 'text', 'rating']
     if not all(field in data for field in required_fields):
@@ -101,15 +198,57 @@ def create_feedback_api():
 
 @api_bp.route('/feedback/<int:id>', methods=['DELETE'])
 def delete_feedback(id):
-    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
+    """
+    Видалити відгук (Admin)
+    ---
+    tags:
+      - Feedback
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Відгук видалено
+    """
+    if session.get('role') != 'admin' and not session.get('admin_access'):
+        return jsonify({"error": "Admin only"}), 403
     db = get_db()
     db.execute('DELETE FROM feedback WHERE id = ?', (id,))
     db.commit()
     return jsonify({"message": "Feedback deleted"}), 200
 
-# --- ЗАМОВЛЕННЯ (ORDERS) ---
+# --- ЗАМОВЛЕННЯ ---
 @api_bp.route('/orders', methods=['POST'])
 def create_order_api():
+    """
+    Створити замовлення
+    ---
+    tags:
+      - Orders
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id: {type: integer}
+                  quantity: {type: integer}
+    responses:
+      201:
+        description: Замовлення створено
+    """
     data = request.get_json()
     required_fields = ['username', 'email', 'items']
     if not all(field in data for field in required_fields):
@@ -137,7 +276,17 @@ def create_order_api():
 
 @api_bp.route('/orders', methods=['GET'])
 def get_all_orders():
-    if session.get('role') != 'admin': return jsonify({"error": "Admin only"}), 403
+    """
+    Отримати всі замовлення (Admin)
+    ---
+    tags:
+      - Orders
+    responses:
+      200:
+        description: Список замовлень
+    """
+    if session.get('role') != 'admin' and not session.get('admin_access'):
+        return jsonify({"error": "Admin only"}), 403
     db = get_db()
     db.row_factory = dict_factory
     orders = db.execute('''
