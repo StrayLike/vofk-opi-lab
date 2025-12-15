@@ -10,27 +10,6 @@
 
 Проєкт розроблено як класичний вебзастосунок на базі фреймворку Flask, який функціонує всередині контейнеризованого середовища Docker. Архітектура спроєктована для забезпечення легкості розгортання (Deployment), масштабованості та ізоляції компонентів.
 
-### 1.1. Діаграма Компонентів (Component Diagram)
-
-```mermaid
-graph TD
-    Client[Клієнт (Браузер)] -->|HTTP/HTTPS (Port 80/443)| Nginx[Nginx Reverse Proxy]
-    
-    subgraph Docker Network
-        Nginx -->|Proxy Pass (Port 5000)| FlaskApp[Flask Backend (Gunicorn/Werkzeug)]
-        
-        FlaskApp -->|Read/Write| SQLite[(SQLite Database)]
-        FlaskApp -->|Session Storage| SessionMem[In-Memory Session]
-        
-        subgraph "Application Logic"
-            FlaskApp -->|Render| Jinja2[HTML Templates]
-            FlaskApp -->|JSON| REST_API[REST API v1]
-        end
-    end
-    
-    SQLite -.->|Persisted Volume| HostFS[Файлова система Хоста]
-
-```
 
 ###1.2. Опис Компонентів| Компонент | Технологія | Опис та Відповідальність |
 | --- | --- | --- |
