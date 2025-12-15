@@ -1,39 +1,31 @@
+# docker-compose.yml
+
 version: '3.8'
 
 services:
-  # Наш Flask додаток
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: stardew_app
-    # Експортуємо порт 5000 тільки для Nginx (назовні він закритий)
-    expose:
-      - "5000"
+    build: .
+    # Додаємо ports тут для локального запуску, якщо Railway не буде використовувати Nginx
+    ports:
+      - "5000:5000" 
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
     env_file:
       - .env
-    volumes:
-      - sqlite_data:/app/data
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/status"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/health"]
       interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-  # Nginx (Reverse Proxy) - Це для Високого рівня
-  nginx:
-    image: nginx:alpine
-    container_name: stardew_nginx
-    ports:
-      - "80:80"  # Сайт буде доступний просто як http://localhost
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - web
-    restart: unless-stopped
+      timeout: 10s
+      retries: 5
+  
+#   image: nginx:alpine
+#   ports:
+#     - "80:80"
+#   volumes:
+#     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+#   depends_on:
+#     - web
 
 volumes:
   sqlite_data:
-    driver: local
