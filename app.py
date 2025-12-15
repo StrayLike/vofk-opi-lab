@@ -73,9 +73,6 @@ def register():
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
-        # 💡 ТИМЧАСОВА ЗМІНА: Додаємо вибір ролі, за замовчуванням 'user'
-        role = request.form.get('role', 'user') 
-        
         db = get_db()
         error = None
         if not username: error = 'Login required.'
@@ -83,9 +80,7 @@ def register():
         if error is None:
             try:
                 hashed_pw = generate_password_hash(password)
-                # Зберігаємо роль, вибрану користувачем
-                db.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', 
-                           (username, email, hashed_pw, role))
+                db.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', (username, email, hashed_pw))
                 db.commit()
                 return redirect(url_for('login'))
             except db.IntegrityError:
