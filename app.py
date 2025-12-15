@@ -5,13 +5,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, close_db, init_db, DATABASE
 from flasgger import Swagger
 from flask_cors import CORS
-# Припускаємо, що api.py існує
 from api import api_bp 
 
 # --- КОНФІГУРАЦІЯ ---
 app = Flask(__name__)
-# Ключ з ENV
 app.secret_key = os.environ.get('SECRET_KEY', 'stardew_valley_secret_key_change_me')
+
+# 💡 НОВИЙ ФІКС: Hardcoded пароль для демонстрації адмінки
+ADMIN_PASSCODE = '0000' 
 
 CORS(app) 
 Swagger(app)
@@ -80,8 +81,8 @@ def register():
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
-        # 💡 ТИМЧАСОВА ЗМІНА (для розгортання): Додаємо вибір ролі
-        role = request.form.get('role', 'user') 
+        # [ОЧИЩЕНО] Прибираємо тимчасовий вибір ролі. Роль завжди 'user'
+        role = 'user' 
         
         db = get_db()
         error = None
@@ -90,6 +91,7 @@ def register():
         if error is None:
             try:
                 hashed_pw = generate_password_hash(password)
+                # Зберігаємо роль, примусово 'user'
                 db.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)', 
                            (username, email, hashed_pw, role))
                 db.commit()
@@ -122,6 +124,8 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
+    # Також скидаємо тимчасовий адмін-доступ
+    session.pop('admin_access', None) 
     flash("Ви успішно вийшли.")
     return redirect(url_for('home'))
 
@@ -131,7 +135,6 @@ def logout():
 @app.route('/shop')
 def shop():
     category = request.args.get('category')
-    # [ЛАБА 9] Сортування
     sort_by = request.args.get('sort_by', 'id')
     order = request.args.get('order', 'ASC')
 
@@ -153,19 +156,16 @@ def shop():
     products = db.execute(query, params).fetchall()
     return render_template('shop.html', products=products, sort_by=sort_by, order=order)
 
-# [ЛАБА 9] Додавання товару: зберігаємо кількість у словнику
 @app.route('/add_to_cart/<int:id>', methods=('POST',))
 def add_to_cart(id):
     id_str = str(id)
     if 'cart' not in session: session['cart'] = {}
     
-    # Збільшуємо кількість на 1
     session['cart'][id_str] = session['cart'].get(id_str, 0) + 1
     session.modified = True
     flash("Товар додано до кошика!")
     return redirect(url_for('shop'))
 
-# [ЛАБА 9] Сторінка кошика: читаємо словник
 @app.route('/cart')
 def cart():
     cart_items_dict = session.get('cart', {})
@@ -196,7 +196,6 @@ def cart():
     
     return render_template('cart.html', cart_items=items_with_count, total=total)
 
-# [ЛАБА 9] Зміна кількості в кошику (+/-)
 @app.route('/update_cart_item/<int:id>/<action>', methods=('POST',))
 def update_cart_item(id, action):
     id_str = str(id) 
@@ -214,14 +213,12 @@ def update_cart_item(id, action):
             session['cart'][id_str] = current_count - 1
             flash(f"Кількість товару зменшено.")
         elif current_count == 1:
-            # Видаляємо товар повністю
             session['cart'].pop(id_str, None) 
             flash(f"Товар видалено з кошика.")
             
     session.modified = True
     return redirect(url_for('cart'))
 
-# [ЛАБА 9] Очищення кошика
 @app.route('/clear_cart', methods=('POST',))
 def clear_cart():
     session.pop('cart', None)
@@ -265,16 +262,28 @@ def checkout():
     return redirect(url_for('home'))
 
 
-# --- МАРШРУТИ: АДМІНКА (З ТИМЧАСОВО ВІДКЛЮЧЕНОЮ ПЕРЕВІРКОЮ РОЛІ) ---
+# --- МАРШРУТИ: АДМІНКА (З ПАРОЛЬНИМ ДОСТУПОМ) ---
 
-@app.route('/manage')
+@app.route('/manage', methods=('GET', 'POST'))
 def manage():
-    # Тимчасовий фікс: просто повертаємо шаблон, якщо користувач увійшов
-    if g.user is None:
-        flash("Увійдіть для доступу до панелі.")
-        return redirect(url_for('login'))
-        
-    return render_template('manage.html')
+    # 1. Якщо доступ вже надано через сесію, пропускаємо
+    if session.get('admin_access') == True:
+        return render_template('manage.html', admin_granted=True)
+
+    # 2. Перевірка паролю (POST запит з форми)
+    if request.method == 'POST':
+        passcode = request.form.get('passcode')
+        if passcode == ADMIN_PASSCODE:
+            session['admin_access'] = True
+            flash("Доступ надано! Вітаємо в Адмін-Панелі.", 'success')
+            # Перенаправляємо на GET-маршрут
+            return redirect(url_for('manage')) 
+        else:
+            flash("Невірний пароль для доступу!", 'error')
+            return render_template('manage.html', admin_granted=False)
+
+    # 3. GET запит (відображаємо форму входу)
+    return render_template('manage.html', admin_granted=False)
 
 # --- ІНІЦІАЛІЗАЦІЯ ---
 
@@ -297,4 +306,5 @@ def init_db_on_startup():
 
 init_db_on_startup()
 
-if __name
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

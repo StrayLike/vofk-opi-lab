@@ -32,8 +32,8 @@
                 <a href="{{ url_for('feedback') }}" class="text-white hover:text-yellow-200 transition-colors duration-200">Відгуки</a>
 
                 {% if g.user and g.user['role'] == 'admin' %}
-    <a href="{{ url_for('manage') }}" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg border-2 border-red-700 shadow transition">🛠️ Адмінка</a>
-    {% endif %}
+                    <a href="{{ url_for('manage') }}" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg border-2 border-red-700 shadow transition">🛠️ Адмінка</a>
+                {% endif %}
 
                 <div class="border-l border-green-500 pl-6 ml-2 flex items-center space-x-4">
                     {% if g.user %}
